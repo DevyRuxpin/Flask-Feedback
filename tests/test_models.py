@@ -9,7 +9,7 @@ class UserModelTestCase(TestCase):
 
     def setUp(self):
         """Clean up existing users."""
-        db.session.rollback()  # Roll back any failed transactions
+        db.session.rollback()
         User.query.delete()
         Feedback.query.delete()
         db.session.commit()
@@ -36,3 +36,65 @@ class UserModelTestCase(TestCase):
         # User should have no feedback
         self.assertEqual(len(u.feedback), 0)
         self.assertEqual(u.username, "testuser")
+
+    def test_valid_registration(self):
+        """Test valid user registration."""
+        u = User.register(
+            username="testuser2",
+            password="password",
+            first_name="Test",
+            last_name="User",
+            email="test2@test.com"
+        )
+        db.session.add(u)
+        db.session.commit()
+
+        self.assertEqual(u.username, "testuser2")
+        self.assertNotEqual(u.password, "password")
+        # Bcrypt strings should start with $2b$
+        self.assertTrue(u.password.startswith("$2b$"))
+
+    def test_valid_authentication(self):
+        """Test valid user authentication."""
+        u = User.register(
+            username="testuser3",
+            password="password",
+            first_name="Test",
+            last_name="User",
+            email="test3@test.com"
+        )
+        db.session.add(u)
+        db.session.commit()
+
+        valid_auth = User.authenticate("testuser3", "password")
+        self.assertIsInstance(valid_auth, User)
+
+    def test_invalid_username(self):
+        """Test invalid username authentication."""
+        u = User.register(
+            username="testuser4",
+            password="password",
+            first_name="Test",
+            last_name="User",
+            email="test4@test.com"
+        )
+        db.session.add(u)
+        db.session.commit()
+
+        invalid_auth = User.authenticate("wrongusername", "password")
+        self.assertFalse(invalid_auth)
+
+    def test_invalid_password(self):
+        """Test invalid password authentication."""
+        u = User.register(
+            username="testuser5",
+            password="password",
+            first_name="Test",
+            last_name="User",
+            email="test5@test.com"
+        )
+        db.session.add(u)
+        db.session.commit()
+
+        invalid_auth = User.authenticate("testuser5", "wrongpassword")
+        self.assertFalse(invalid_auth)
