@@ -32,7 +32,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libpq-dev python3-dev
+        sudo apt-get install -y libpq-dev python3-dev postgresql-client
     
     - name: Install Python dependencies
       run: |
@@ -42,7 +42,8 @@ jobs:
     
     - name: Run tests
       env:
+        GITHUB_ACTIONS: true
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/flask_feedback_test
         SECRET_KEY: test_secret_key
       run: |
-        python -m pytest
+        python -m pytest -v
