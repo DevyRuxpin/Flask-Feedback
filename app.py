@@ -1,20 +1,24 @@
 """Feedback Flask app."""
 
-from flask import Flask, render_template, redirect, session, flash, url_for
+from flask import Flask, render_template, redirect, session, flash
 from flask_debugtoolbar import DebugToolbarExtension
 from werkzeug.exceptions import Unauthorized
 
 from models import connect_db, db, User, Feedback
 from forms import RegisterForm, LoginForm, FeedbackForm, DeleteForm
-from config import Config
 
 app = Flask(__name__)
-app.config.from_object(Config)
+
+# Use the environment variable for DATABASE_URL, with a fallback
+app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql:///flask-feedback"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ECHO'] = True
+app.config['SECRET_KEY'] = "shhhhh"
+app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 
 toolbar = DebugToolbarExtension(app)
 
 connect_db(app)
-db.create_all()
 
 @app.route("/")
 def homepage():
@@ -38,8 +42,8 @@ def register():
 
         user = User.register(username, password, first_name, last_name, email)
         db.session.commit()
-
         session['username'] = user.username
+
         flash(f"Welcome, {user.username}!", "success")
         return redirect(f"/users/{user.username}")
 
@@ -64,13 +68,14 @@ def login():
             return redirect(f"/users/{user.username}")
         else:
             form.username.errors = ["Invalid username/password."]
+            return render_template("users/login.html", form=form)
 
     return render_template("users/login.html", form=form)
 
 @app.route("/logout")
 def logout():
     """Logout route."""
-    session.pop("username", None)
+    session.pop("username")
     flash("You have been logged out.", "info")
     return redirect("/login")
 
@@ -171,3 +176,6 @@ def page_not_found(e):
 def unauthorized(e):
     """401 UNAUTHORIZED page."""
     return render_template('errors/401.html'), 401
+
+if __name__ == '__main__':
+    app.run(debug=True)
