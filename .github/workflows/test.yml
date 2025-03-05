@@ -46,5 +46,3 @@ jobs:
         SECRET_KEY: test_secret_key
       run: |
         python -m pytest
-
-
